@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='HexImage',
     version='0.0.0',
-    packages=['haxagonal', 'haxagonal.parse', 'haxagonal.visualization'],
+    packages=['haxagonal', 'haxagonal.parse', 'haxagonal.visualize'],
     url='',
     license='',
     author='Lee',
