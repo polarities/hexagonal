@@ -1,9 +1,9 @@
 from setuptools import setup
 
 setup(
-    name='HexImage',
+    name='hexagonal',
     version='0.0.0',
-    packages=['haxagonal', 'haxagonal.parse', 'haxagonal.visualize'],
+    packages=['hexagonal', 'hexagonal.parse', 'hexagonal.visualize'],
     url='',
     license='',
     author='Lee',
