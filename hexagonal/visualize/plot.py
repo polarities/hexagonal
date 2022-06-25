@@ -13,9 +13,6 @@ class hexagonal_imshow():
         # Check ax is given or not.
         self.if_ax(ax)
 
-        # Draw the figure.
-        self.fig.canvas.draw()
-
         # Get colormap
         colormap = mpl.cm.get_cmap(cmap)
 
@@ -27,13 +24,13 @@ class hexagonal_imshow():
         # Transform data locations.
 
         self.col = mcol.RegularPolyCollection(6,
-                                         offsets=list(zip(self.transformed[0], self.transformed[1])),
-                                         array=d,
-                                         cmap=cmap,
-                                         sizes=size,
-                                         linewidths=None,
-                                         edgecolors=None,
-                                         )
+                                              offsets=list(zip(self.__transformed_xyz_matrix[0], self.__transformed_xyz_matrix[1])),
+                                              array=d,
+                                              cmap=cmap,
+                                              sizes=size,
+                                              linewidths=None,
+                                              edgecolors=None,
+                                              )
         self.ax.add_collection(self.col)
         self.fig.canvas.mpl_connect('draw_event', self.on_draw)
         self.fig.canvas.draw()
@@ -47,31 +44,31 @@ class hexagonal_imshow():
             self.fig = ax.get_figure()
 
     def on_draw(self, event):
-        print('aa')
-        ax_transform_translation_sanitized = self.ax.get_transform()
-        ax_transform_translation_sanitized[0, 2] = 0
-        ax_transform_translation_sanitized[1, 2] = 0
-        ax_transform_translation_sanitized[0, 0] = 1
-        ax_transform_translation_sanitized[1, 1] = 1
-
-
         transdata_sanitized = self.ax.transData.get_matrix()
         transdata_sanitized[0, 2] = 0
         transdata_sanitized[1, 2] = 0
         transdata_sanitized[0, 1] = 0
         transdata_sanitized[1, 0] = 0
 
-        self.col.set_transform(mtransforms.Affine2D(ax_transform_translation_sanitized @ transdata_sanitized) )
+        if isinstance(self.ax.get_transform(), mtransforms.IdentityTransform):
+            self.col.set_transform(mtransforms.Affine2D(transdata_sanitized))
+        else:
+            ax_transform_translation_sanitized = self.ax.get_transform()
+            ax_transform_translation_sanitized[0, 2] = 0
+            ax_transform_translation_sanitized[1, 2] = 0
+            ax_transform_translation_sanitized[0, 0] = 1
+            ax_transform_translation_sanitized[1, 1] = 1
+            self.col.set_transform(mtransforms.Affine2D(ax_transform_translation_sanitized @ transdata_sanitized))
         self.col.set_offset_transform(self.ax.transData)
 
-    @property
-    def data(self):
+    @cached_property
+    def __data_xyz_matrix(self):
         return list(zip(self.x, self.y, np.ones(np.shape(self.x))))
 
-
     @cached_property
-    def transformed(self):
-        return self.ax.get_transform() @ np.array(self.data).transpose()
+    def __transformed_xyz_matrix(self):
+        return self.ax.get_transform() @ np.array(self.__data_xyz_matrix).transpose()
+
     @cached_property
     def ax(self):
         return self.ax
@@ -82,8 +79,21 @@ class hexagonal_imshow():
 
     @cached_property
     def extent(self):
-        return np.min(self.x), np.max(self.x), np.min(self.y), np.max(self.y)
+        """
+        Return the extent of the original data. If transformed data extent required please use `deformed_extent`
+        attribute.
+        """
+        return np.min(self.x), \
+               np.max(self.x), \
+               np.min(self.y), \
+               np.max(self.y)
 
     @cached_property
     def deformed_extent(self):
-        return np.min(self.transformed[0]), np.max(self.transformed[0]), np.min(self.transformed[1]), np.max(self.transformed[1])
+        """
+        Return the extent of the deformed data. If original data extent required please use `extent` attribute.
+        """
+        return np.min(self.__transformed_xyz_matrix[0]), \
+               np.max(self.__transformed_xyz_matrix[0]), \
+               np.min(self.__transformed_xyz_matrix[1]), \
+               np.max(self.__transformed_xyz_matrix[1])
