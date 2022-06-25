@@ -31,8 +31,8 @@ class hexagonal_imshow():
                                          array=d,
                                          cmap=cmap,
                                          sizes=size,
-                                         linewidths=1,
-                                         edgecolors=colormap(d),
+                                         linewidths=None,
+                                         edgecolors=None,
                                          )
         self.ax.add_collection(self.col)
         self.fig.canvas.mpl_connect('draw_event', self.on_draw)
@@ -56,14 +56,12 @@ class hexagonal_imshow():
 
 
         transdata_sanitized = self.ax.transData.get_matrix()
-
-
         transdata_sanitized[0, 2] = 0
         transdata_sanitized[1, 2] = 0
         transdata_sanitized[0, 1] = 0
         transdata_sanitized[1, 0] = 0
 
-        self.col.set_transform(mtransforms.Affine2D(ax_transform_translation_sanitized))
+        self.col.set_transform(mtransforms.Affine2D(ax_transform_translation_sanitized @ transdata_sanitized) )
         self.col.set_offset_transform(self.ax.transData)
 
     @property
