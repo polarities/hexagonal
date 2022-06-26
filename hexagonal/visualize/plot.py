@@ -5,6 +5,7 @@ import matplotlib.collections as mcol
 import matplotlib.transforms as mtransforms
 from functools import cached_property
 
+
 class hexagonal_imshow():
     def __init__(self, x, y, d, r=1, ax=None, cmap='gray'):
         self.x = x
@@ -63,18 +64,36 @@ class hexagonal_imshow():
 
     @cached_property
     def __data_xyz_matrix(self):
+        """
+        Internal usage only. Returns array comprised with [x, y, 1] matrix. Last 1 was added to transfer x, y coordinate
+         to the homogeneous affine transformation space.
+        :return:
+        """
         return list(zip(self.x, self.y, np.ones(np.shape(self.x))))
 
     @cached_property
     def __transformed_xyz_matrix(self):
-        return self.ax.get_transform() @ np.array(self.__data_xyz_matrix).transpose()
+        """
+        Internal usage only. Returns array which contains transformed x, y coordinate. Please note, this code only
+        aware affine transformation that provided by `set_transform()`.
+        """
+        if isinstance(self.ax.get_transform(), mtransforms.IdentityTransform):
+            return np.array(self.__data_xyz_matrix).transpose()
+        else:
+            return self.ax.get_transform() @ np.array(self.__data_xyz_matrix).transpose()
 
     @cached_property
-    def ax(self):
+    def ax(self) -> plt.Axes:
+        """
+        Return the Axes object.
+        """
         return self.ax
 
     @cached_property
     def fig(self):
+        """
+        Return the figure object.
+        """
         return self.fig
 
     @cached_property
