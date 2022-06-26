@@ -18,16 +18,14 @@ class hexagonal_imshow():
         colormap = mpl.cm.get_cmap(cmap)
 
         d = d / np.max(d)  # Normalizing data range (0 - 1)
-        vertices = r
-        area = vertices ** 2
+        area = np.pi * ((r/np.sqrt(3)) ** 2)
         size = np.ones(shape=np.shape(x)) * area
 
-        # Transform data locations.
-
         self.col = mcol.RegularPolyCollection(6,
-                                              offsets=list(zip(self.__transformed_xyz_matrix[0], self.__transformed_xyz_matrix[1])),
+                                              offsets=list(zip(self.__transformed_xyz_matrix[0],
+                                                               self.__transformed_xyz_matrix[1])),
                                               array=d,
-                                              cmap=cmap,
+                                              cmap=colormap,
                                               sizes=size,
                                               linewidths=None,
                                               edgecolors=None,
@@ -36,7 +34,7 @@ class hexagonal_imshow():
         self.fig.canvas.mpl_connect('draw_event', self.on_draw)
         self.fig.canvas.draw()
 
-    def if_ax(self, ax:plt.Axes=None):
+    def if_ax(self, ax: plt.Axes = None):
         if ax is None:
             self.fig, self.ax = plt.subplots()
 
@@ -45,20 +43,16 @@ class hexagonal_imshow():
             self.fig = ax.get_figure()
 
     def on_draw(self, event):
+        # Eliminating non-trace part from transdata. Remaining the trace part (responsible for scaling) only.
         transdata_sanitized = self.ax.transData.get_matrix()
-        transdata_sanitized[0, 2] = 0
-        transdata_sanitized[1, 2] = 0
-        transdata_sanitized[0, 1] = 0
-        transdata_sanitized[1, 0] = 0
+        transdata_sanitized[(0, 0, 1, 1), (1, 2, 0, 2)] = 0
 
-        if isinstance(self.ax.get_transform(), mtransforms.IdentityTransform):
-            self.col.set_transform(mtransforms.Affine2D(transdata_sanitized))
-        else:
+        if isinstance(self.ax.get_transform(), mtransforms.IdentityTransform):  # If ax doesn't have transformation obj.
+            self.col.set_transform(mtransforms.Affine2D(transdata_sanitized))  # scaling only.
+        else:  # If has,
             ax_transform_translation_sanitized = self.ax.get_transform()
-            ax_transform_translation_sanitized[0, 2] = 0
-            ax_transform_translation_sanitized[1, 2] = 0
-            ax_transform_translation_sanitized[0, 0] = 1
-            ax_transform_translation_sanitized[1, 1] = 1
+            ax_transform_translation_sanitized[(0, 1), (2, 2)] = 0  # Then sanitize translation component.
+            # Affine transformation without translation + size scaling.
             self.col.set_transform(mtransforms.Affine2D(ax_transform_translation_sanitized @ transdata_sanitized))
         self.col.set_offset_transform(self.ax.transData)
 
