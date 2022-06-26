@@ -14,10 +14,12 @@ plotting and visualization at the outside of the tools which provided by vendor.
 - Hexagonal image indexing & nearest neighbour kernel.
 - Kernel-based image data analysis.
 - Rudimentary image processing capabilities.
+- Optimization. Currently, approx ~2M pixels can be handled within an 'acceptable' timeframe.
+- Hexagonal image container which contains image data, metadata, and transformation matrix.
 
 # Current state
 - Currently only visualization code has been implemented.
-- Active development on-going. API will change rapidly. 
+- Active development on-going. API will change rapidly.
 
 # Installation
 ## conda
