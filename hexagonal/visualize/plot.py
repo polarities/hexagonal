@@ -19,14 +19,13 @@ class hexagonal_imshow():
 
         d = d / np.max(d)  # Normalizing data range (0 - 1)
         area = np.pi * ((r/np.sqrt(3)) ** 2)
-        size = np.ones(shape=np.shape(x)) * area
 
         self.col = mcol.RegularPolyCollection(6,
                                               offsets=list(zip(self.__transformed_xyz_matrix[0],
                                                                self.__transformed_xyz_matrix[1])),
                                               array=d,
                                               cmap=colormap,
-                                              sizes=size,
+                                              sizes=(area,),
                                               linewidths=None,
                                               edgecolors=None,
                                               )
