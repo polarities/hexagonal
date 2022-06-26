@@ -56,9 +56,12 @@ class ImportFromSerial():
         self.__test_and_correct_error()  # Check `d_sequence` is correct. If not, try to fix.
         self.compile_image()
 
+    @property
+    def xydata(self):
+        return self.x_stack, self.y_stack, self.d_stack
 
-    def compile_image(self):
-        # Calculated data. Do not set!
+
+    def compile_image(self) -> NoReturn:
         self.x_stack: np.ndarray = np.empty(0)
         self.y_stack: np.ndarray = np.empty(0)
 
@@ -68,7 +71,7 @@ class ImportFromSerial():
             stack_offset = self.d_sequence[sequence][1] * self.x_step
 
             # Y = Rows, X = Columns.
-            x_array_temp = self.x_step * (np.array(range(int(stack_ncol)))) + stack_offset  # [0.5, 1.5, 2.5, ...]
+            x_array_temp = self.x_step * (np.array(range(stack_ncol))) + stack_offset  # [0.5, 1.5, 2.5, ...]
             y_array_temp = np.ones(int(stack_ncol)) * row_index * self.y_step  # [0, 0, 0, ...]
 
             # Append to the main X & Y coordinate stack.
@@ -87,9 +90,6 @@ class ImportFromSerial():
         elif (self.x_step is None) and (self.y_step is not None):
             self.x_step = self.y_step * (2 / np.sqrt(3))
 
-    @property
-    def xydata(self):
-        return self.x_stack, self.y_stack, self.d_stack
 
     def __test_and_correct_error(self):
         if self.__check_hexagonal_dataentry(self.d_sequence[0][0],  # Check EBSD size is right.
