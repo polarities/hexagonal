@@ -76,6 +76,13 @@ class hexagonal_imshow():
         else:
             return self.ax.get_transform() @ np.array(self.__data_xyz_matrix).transpose()
 
+    @property
+    def xy(self):
+        """
+        Returns array of the deformed X and Y separately.
+        """
+        return self.__transformed_xyz_matrix[0], self.__transformed_xyz_matrix[1]
+
     @cached_property
     def ax(self) -> plt.Axes:
         """
