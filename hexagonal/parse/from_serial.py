@@ -53,13 +53,18 @@ class HexImageBase(ABC):
 
     def resample2d(self, method='nearest'):
         """
-        Resample 2D image from hexagonal image to square grid image. Image can be distorted. Resampling not recommended
-        for image data with low resolution and data-containing image-like data. For example, EBSD.
+        Resample 2D image from hexagonal image to square grid image. About the interpolation method, please refer to the
+         documentation of `scipy.interpolate.griddata`.
 
         Parameters
         ----------
-        method : {'nearest', 'bilinear', 'bicubic', 'lanczos'}, optional
+        method : {‘linear’, ‘nearest’, ‘cubic’}, optional
             Method for interpolation. Default is 'nearest'.
+
+        Notes
+        -----
+        Image can be distorted. Resampling of Hexagonal to Square grid is not guaranteed to be accurate, especially for
+        image data with low resolution, or containing scientific data.
         """
         from scipy.interpolate import griddata
 
@@ -78,9 +83,20 @@ class HexImageBase(ABC):
         return image_data_resampled
 
     def metadata(self):
+        """
+        Print 'core' metadata of the image.
+
+        Returns
+        -------
+        dict
+            Dictionary of metadata.
+        """
         raise NotImplementedError
 
     def get_xydata(self):
+        """
+        Get x, y coordinates and imagedata. Recommended use cases are for plotting by matplotlib manually.
+        """
         return self.x_coordinates, self.y_coordinates, self.image_data
 
     def _test_and_correct_error(self):
@@ -183,6 +199,7 @@ class ImportFromSerial(HexImageBase):
         stepsize for x-direction.
     y_step : float
         stepsize for y-direction.
+
     """
 
     def __init__(self, image_data:np.ndarray,
