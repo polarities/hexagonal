@@ -53,7 +53,13 @@ class HexImageBase(ABC):
 
     def resample2d(self, method='nearest'):
         """
-        Resample 2D image from hexagonal image to square grid image. Image can be distorted.
+        Resample 2D image from hexagonal image to square grid image. Image can be distorted. Resampling not recommended
+        for image data with low resolution and data-containing image-like data. For example, EBSD.
+
+        Parameters
+        ----------
+        method : {'nearest', 'bilinear', 'bicubic', 'lanczos'}, optional
+            Method for interpolation. Default is 'nearest'.
         """
         from scipy.interpolate import griddata
 
@@ -65,18 +71,16 @@ class HexImageBase(ABC):
                              np.max(self.y_coordinates),
                              self.image_rows_number)
 
-        hex_xy = np.vstack((self.x_coordinates, self.y_coordinates))
-        sqr_xy = np.meshgrid(x_axis, y_axis)
+        x, y = np.meshgrid(x_axis, y_axis)
 
         # Resample image.
-        image_data_resampled = griddata(hex_xy, self.image_data, sqr_xy, method=method)
+        image_data_resampled = griddata((self.x_coordinates, self.y_coordinates), self.image_data, (x, y), method=method)
         return image_data_resampled
-
 
     def metadata(self):
         raise NotImplementedError
 
-    def xydata(self):
+    def get_xydata(self):
         return self.x_coordinates, self.y_coordinates, self.image_data
 
     def _test_and_correct_error(self):
@@ -115,7 +119,7 @@ class HexImageBase(ABC):
                                    n_dataentry: int,
                                    return_value: False) -> bool:
         """
-        Check whether EBSD data number is correct or not based on the parsed metadata.
+        Check whether hexagonal data number is correct or not based on the parsed metadata.
 
         Parameters
         ----------
@@ -217,7 +221,6 @@ class ImportFromSerial(HexImageBase):
                 self.image_columns_offset_even: float | None = d_ncol_even_offset
                 self.image_columns_number_odd: int | None = d_ncol_odd
                 self.image_columns_number_even: int | None = d_ncol_even
-                d_sequence = np.array([[d_ncol_even, d_ncol_even_offset], [d_ncol_odd, d_ncol_odd_offset]])
         else:
             if d_nrow is None:
                 raise ValueError("d_nrow must be provided if d_sequence is provided.")
@@ -235,9 +238,6 @@ class ImportFromSerial(HexImageBase):
         self.image_dx: float = x_step
         self.image_dy: float = y_step
 
-        # Class-specific attribute
-        self.d_sequence: np.ndarray | None = d_sequence
-
         # Data validation and population.
         self._set_xystep()  # Check X, Y data. If not available, try to set by default value.
         self._test_and_correct_error()  # Check `d_sequence` is correct. If not, try to fix.
@@ -250,7 +250,7 @@ class ImportFromSerial(HexImageBase):
         self.y_coordinates: np.ndarray = np.empty(0)
 
         for row_index in range(self.image_rows_number):
-            if row_index // 2 == 0:
+            if row_index % 2 == 0:
                 row_columns = self.image_columns_number_even
                 row_offset = self.image_columns_offset_even
             else:
@@ -258,8 +258,8 @@ class ImportFromSerial(HexImageBase):
                 row_offset = self.image_columns_offset_odd
 
             # Y = Rows, X = Columns.
-            x_array_temp = self.image_dx * (np.array(range(row_columns))) + row_offset  # [0.5, 1.5, 2.5, ...]
-            y_array_temp = np.ones(int(row_columns)) * row_index * self.image_dy  # [0, 0, 0, ...]
+            x_array_temp = np.array([(self.image_dx * x) + row_offset for x in range(row_columns)])  # [0.5, 1.5, 2.5, ...]
+            y_array_temp = np.array([self.image_dy * row_index for _ in range(row_columns)])  # [0.5, 1.5, 2.5, ...]
 
             # Append to the main X & Y coordinate stack.
             self.x_coordinates = np.append(self.x_coordinates, x_array_temp)
