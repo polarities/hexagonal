@@ -4,6 +4,7 @@ import warnings
 from dataclasses import dataclass
 from functools import cache
 from abc import ABC
+import copy
 
 class HexImageBase(ABC):
     x_coordinates: np.ndarray | None = None
@@ -51,7 +52,7 @@ class HexImageBase(ABC):
         self._checker()
         self._set_xystep()
 
-    def resample2d(self, method='nearest'):
+    def resample2d(self, method='nearest', aspect_ratio_1 = True):
         """
         Resample 2D image from hexagonal image to square grid image. About the interpolation method, please refer to the
          documentation of `scipy.interpolate.griddata`.
@@ -60,11 +61,21 @@ class HexImageBase(ABC):
         ----------
         method : {‘linear’, ‘nearest’, ‘cubic’}, optional
             Method for interpolation. Default is 'nearest'.
+        aspect_ratio_1 : bool, optional
+            If True, the pixel width and pixel height ratio will be 1:1. If false, pixel height wise interpolation will
+            use the `number_of_rows`, which the data will be more accurate but aspect ratio distorted.
 
         Notes
         -----
         Image can be distorted. Resampling of Hexagonal to Square grid is not guaranteed to be accurate, especially for
         image data with low resolution, or containing scientific data.
+
+        See Also
+        --------
+        hexagonal.HexImageBase.square_gridded : Hexagonal image to square grid without resampling the data. Key
+        difference is that this function does not interpolate the image data, but return the
+        `matplotlib.pyplot.Axes.imshow` plottable 2-dimensional array. This function is recommended for fast visual
+        inspection of the image.
         """
         from scipy.interpolate import griddata
 
@@ -72,15 +83,77 @@ class HexImageBase(ABC):
                              np.max(self.x_coordinates),
                              np.max((self.image_columns_number_even, self.image_columns_number_odd))
                              )
-        y_axis = np.linspace(np.min(self.y_coordinates),
-                             np.max(self.y_coordinates),
-                             self.image_rows_number)
+        if aspect_ratio_1 is True:
+            interval_aspect_conserving = (np.max(self.x_coordinates) - np.min(self.x_coordinates)) / np.max((self.image_columns_number_even, self.image_columns_number_odd))
+            y_axis_rows_number = (np.max(self.y_coordinates) - np.min(self.y_coordinates)) / interval_aspect_conserving
+            y_axis_rows_number = int(y_axis_rows_number)
+            y_axis = np.linspace(np.min(self.y_coordinates),
+                                 np.max(self.y_coordinates),
+                                 y_axis_rows_number)
+        else:
+            y_axis = np.linspace(np.min(self.y_coordinates),
+                                 np.max(self.y_coordinates),
+                                 self.image_rows_number)
 
         x, y = np.meshgrid(x_axis, y_axis)
 
         # Resample image.
         image_data_resampled = griddata((self.x_coordinates, self.y_coordinates), self.image_data, (x, y), method=method)
         return image_data_resampled
+
+    def square_gridded(self):
+        '''
+        Return hexagonal-sampled image to the square-sampled image.
+
+        Returns
+        -------
+        numpy.ndarray
+
+        Notes
+        -----
+        This function is recommended for fast visual inspection of the image. The location of the each pixel in the
+        square gridded image is not the same as the hexagonal image. Also, you may also expect the height-width ratio
+        distortion of the square gridded image. Since hexagonal image x-interval and y-interval are not the same, but
+        in this function the x-interval and the y-interval are the same. Therefore, the height-width ratio distortion
+        of the square gridded image is significant.
+
+        See Also
+        --------
+        hexagonal.HexImageBase.resample2d : Resample 2D image from hexagonal image to square grid image. This resamples
+        the image data. However, as a result of the resampling, the value of the each pixel cannot be guaranteed.
+        '''
+        datastream = copy.deepcopy(self.image_data)
+        temp_image = list()
+        if self.image_columns_number_odd > self.image_columns_number_even:
+            for index in range(self.image_rows_number):
+                if index % 2 == 1:
+                    temp = datastream[:self.image_columns_number_odd]
+                    datastream = datastream[self.image_columns_number_odd:]
+                    temp_image.append(temp)
+                else:
+                    temp = datastream[:self.image_columns_number_even]
+                    datastream = datastream[self.image_columns_number_even:]
+                    try:
+                        temp = np.insert(temp, 0, None)
+                    except TypeError:
+                        temp = np.insert(temp, 0, 0)
+                    temp_image.append(temp)
+        elif self.image_columns_number_even > self.image_columns_number_odd:
+            for index in range(self.image_rows_number):
+                if index % 2 == 1:
+                    temp = datastream[:self.image_columns_number_odd]
+                    datastream = datastream[self.image_columns_number_odd:]
+                    try:
+                        temp = np.insert(temp, 0, None)
+                    except TypeError:
+                        temp = np.insert(temp, 0, 0)
+                        temp_image.append(temp)
+                else:
+                    temp = datastream[:self.image_columns_number_even]
+                    datastream = datastream[self.image_columns_number_even:]
+                    temp_image.append(temp)
+        return np.array(temp_image)
+
 
     def metadata(self):
         """
