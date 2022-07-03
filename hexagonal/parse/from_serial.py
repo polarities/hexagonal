@@ -267,3 +267,8 @@ class ImportFromSerial(HexImageBase):
 
         del x_array_temp
         del y_array_temp
+
+class FromImage(HexImageBase):
+    def __init__(self, array_like_2d):
+        self.x, self.y = array_like_2d.shape
+        pass
