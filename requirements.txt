@@ -2,4 +2,3 @@ setuptools~=61.2.0
 numpy~=1.21.6
 matplotlib~=3.5.1
 scipy
-numpydoc
