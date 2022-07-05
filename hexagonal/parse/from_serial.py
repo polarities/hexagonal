@@ -101,6 +101,7 @@ class HexImageBase(ABC):
         image_data_resampled = griddata((self.x_coordinates, self.y_coordinates), self.image_data, (x, y), method=method)
         return image_data_resampled
 
+    @cache
     def square_gridded(self):
         '''
         Return hexagonal-sampled image to the square-sampled image.
