@@ -1,3 +1,5 @@
+[![Documentation Status](https://readthedocs.org/projects/hexagonal/badge/?version=latest)](https://hexagonal.readthedocs.io/en/latest/?badge=latest)
+
 # hexagonal
 Hexagonal image handling library.
 
